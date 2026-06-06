@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPS 4660 Inventory</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
+        header { background: #2c2c2c; color: #ffcc00; padding: 15px; text-align: center; }
+        input { width: 100%; padding: 15px; font-size: 18px; border: none; margin: 10px 0; }
+        .item-card { background: white; margin: 10px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .urgent { border-left: 6px solid #d32f2f; }
+        .footer { text-align: center; padding: 15px; font-size: 13px; color: #555; background: #f4f4f4; border-top: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>UPS Housekeeping & Porter Supply</h1>
+        <p>Center 4660 Inventory</p>
+    </header>
+
+    <input type="text" id="search" placeholder="Search items or ask a question..." onkeyup="filterItems()">
+
+    <div id="items"></div>
+
+    <div class="footer">
+        Internal Tool • Maintained by Adam Valdez (Preload Seniority 1/3/2005)<br>
+        Built with assistance from Grok (xAI) • For internal UPS Center 4660 use only<br>
+        Not an official UPS document • Grainger links for ordering reference
+    </div>
+
+    <script>
+        const items = [
+            {name: "Women's paper towels", sku: "143407", daily: 6, stock: 3, status: "URGENT"},
+            {name: "Men's paper towels", sku: "143407", daily: 6, stock: 3, status: "URGENT"},
+            {name: "Toilet paper", sku: "142200", daily: 8, stock: 5, status: "URGENT"},
+            {name: "Hand soap NACCK266121", sku: "", daily: 2, stock: 2, status: "URGENT"},
+            {name: "Windex", sku: "10083792", daily: 0.5, stock: 0.5, status: "URGENT"},
+            {name: "Torpedo trash bags 33x39", sku: "", daily: 3, stock: 0, status: "URGENT"},
+            {name: "Can Liner 27x42", sku: "", daily: 4, stock: 0, status: "URGENT"},
+            {name: "Office garbage bags", sku: "35960int", daily: 2, stock: 0, status: "URGENT"},
+            {name: "Solution tablets", sku: "15300", daily: 1, stock: 0, status: "URGENT"},
+            {name: "Wipe center pulls", sku: "10059455", daily: 2, stock: 0, status: "URGENT"},
+        ];
+
+        function renderItems(filtered) {
+            const container = document.getElementById('items');
+            container.innerHTML = '';
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = `item-card ${item.status === 'URGENT' ? 'urgent' : ''}`;
+                card.innerHTML = `
+                    <strong>${item.name}</strong><br>
+                    SKU: ${item.sku || 'N/A'} | Daily Use: ${item.daily}<br>
+                    Stock: <strong>${item.stock}</strong> | Days Left: ~${Math.round(item.stock / item.daily)}<br>
+                    <span style="color:#d32f2f; font-weight:bold;">${item.status} — ORDER NOW</span>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterItems() {
+            const term = document.getElementById('search').value.toLowerCase();
+            const filtered = items.filter(i => i.name.toLowerCase().includes(term));
+            renderItems(filtered.length ? filtered : items);
+        }
+
+        renderItems(items);
+    </script>
+</body>
+</html>
