@@ -39,11 +39,8 @@
     <div id="itemsContainer"></div>
 
     <div class="footer">
-        Internal Tool — UPS Center 4660 Housekeeping & Porter Supply Inventory<br>
-        Maintained by Adam Valdez (Preload Seniority 1/3/2005)<br>
-        Built with assistance from Grok by xAI • Hosted on GitHub<br>
-        Product information and links sourced from Grainger Industrial Supply and Choctaw Kaul Distribution Co.<br>
-        For internal use only. Not an official UPS document.
+        Internal Tool by Adam Valdez • Built with assistance from Grok by xAI<br>
+        Upcoming: Mobile camera item lookup • OSHA / safety procedure guides • Shared management access
     </div>
 
     <script>
@@ -120,23 +117,6 @@
             return inventory.filter(item => (item.stock / item.daily) < 14);
         }
 
-        function copyReorderList() {
-            const urgent = getUrgentItems();
-            let text = "UPS 4660 Urgent Reorder List\nDate: " + new Date().toLocaleDateString() + "\n\n";
-            urgent.forEach(item => {
-                const days = (item.stock / item.daily).toFixed(1);
-                text += `${item.name}\nItem #: ${item.number}\nStock: ${item.stock} | Days Left: ~${days}\n\n`;
-            });
-            text += "Please order through official UPS accounts.";
-            navigator.clipboard.writeText(text).then(() => {
-                alert("✅ Copied to clipboard!\n\nOpen Outlook (web or app) → New Email → Paste into the body.");
-            });
-        }
-
-        function emailReorderList() {
-            copyReorderList(); // fallback to copy
-        }
-
         function exportReorderList() {
             const urgent = getUrgentItems();
             let text = "UPS 4660 Reorder List\nDate: " + new Date().toLocaleDateString() + "\n\n";
@@ -149,6 +129,23 @@
             a.href = URL.createObjectURL(blob);
             a.download = 'UPS_4660_Reorder_List.txt';
             a.click();
+        }
+
+        function copyReorderList() {
+            const urgent = getUrgentItems();
+            let text = "UPS 4660 Urgent Reorder List\nDate: " + new Date().toLocaleDateString() + "\n\n";
+            urgent.forEach(item => {
+                const days = (item.stock / item.daily).toFixed(1);
+                text += `${item.name}\nItem #: ${item.number}\nStock: ${item.stock} | Days Left: ~${days}\n\n`;
+            });
+            text += "Please order through official UPS accounts.";
+            navigator.clipboard.writeText(text).then(() => {
+                alert("✅ Copied to clipboard!\n\nOpen Outlook → New Email → Paste.");
+            });
+        }
+
+        function emailReorderList() {
+            copyReorderList();
         }
 
         loadStock();
