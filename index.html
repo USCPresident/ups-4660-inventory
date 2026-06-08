@@ -57,7 +57,7 @@
             
             <input type="text" id="issueDesc" placeholder="Describe the issue (e.g. hazardous spill, broken pallet jack)">
             <button onclick="askAdam()">Ask Adam (Safety Advice)</button>
-            <div id="adamResponse" style="margin-top:12px; padding:12px; background:#f0f0f0; border-radius:8px; min-height:60px;"></div>
+            <div id="adamResponse" style="margin-top:12px; padding:12px; background:#f0f0f0; border-radius:8px; min-height:80px;"></div>
             
             <button onclick="generateReport()">Generate Quick Report for Manager</button>
         </div>
@@ -69,16 +69,110 @@
     </div>
 
     <script>
-        // === INVENTORY CODE (full list + editing) ===
-        let inventory = [ /* your full list from before - all 22 items */ 
+        let inventory = [
             {name: "GEORGIA-PACIFIC Paper Towel Roll Brown (Women's & Men's)", number: "143407 / 2U232", daily: 6, stock: 3, image: "https://static.grainger.com/rp/s/is/image/Grainger/2U232_AW01?$adapimg$&hei=536&wid=536", grainger: "https://www.grainger.com/product/GEORGIA-PACIFIC-Paper-Towel-Roll-Brown-2U232"},
-            // ... (all other items exactly as in previous full version)
+            {name: "SCOTT Toilet Paper Roll 2 Ply", number: "142200 / 42EN65", daily: 8, stock: 5, image: "https://static.grainger.com/rp/s/is/image/Grainger/67805_P01__ZXNX_v1?$adapimg$&hei=536&wid=536", grainger: "https://www.grainger.com/product/SCOTT-Toilet-Paper-Roll-2-Ply-42EN65"},
+            {name: "GOJO Hand Wash Series LTX-12 1200 mL Foam", number: "1911-02 / 15E819", daily: 2, stock: 6, grainger: "https://www.grainger.com/product/GOJO-Hand-Wash-Series-LTX-12-15E819"},
+            {name: "HOSPECO Sanitary Napkin Receptacle Liner HS-6141", number: "HS-6141 / 3U824", daily: 1, stock: 1, image: "https://static.grainger.com/rp/s/is/image/Grainger/3U824_AS04?$adapimg$&hei=536&wid=536", grainger: "https://www.grainger.com/product/HOSPECO-Sanitary-Napkin-Receptacle-3U824"},
+            {name: "Torpedo trash bags 33x39", number: "3339int", daily: 3, stock: 3, image: "https://static.grainger.com/rp/s/is/image/Grainger/15E468_GC01?$adapimg$&hei=536&wid=536", grainger: "https://www.grainger.com/product/GRAINGER-Trash-Bags-Premium-15E475"},
+            {name: "GEORGIA-PACIFIC Urinal Screen Non-Para ActiveAire", number: "AWUS007-BX", daily: 1, stock: 1, image: "https://static.grainger.com/rp/s/is/image/Grainger/52WP59_AS03?$adapimg$&hei=536&wid=536", grainger: "https://www.grainger.com/product/GEORGIA-PACIFIC-Urinal-Screen-Non-Para-52WP59"},
+            {name: "M.Net Effaceur Magique Cleaning Wipes", number: "", daily: 2, stock: 5},
+            {name: "Duracell Procell Constant D Battery 12 PK", number: "", daily: 1, stock: 1, grainger: "https://www.grainger.com/product/DURACELL-PROCELL-Battery-D-5LE21"},
+            {name: "TimeMist Premium Air Freshener Dutch Apple & Spice", number: "", daily: 0.3, stock: 4},
+            {name: "Uline S-13277 55-60 GAL Black Trash Liner", number: "S-13277", daily: 2, stock: 1},
+            {name: "Shilcraft Jumbo Roll Tissue 2 Ply", number: "", daily: 8, stock: 3},
+            {name: "UPS742CLUS Trash bags 27x42", number: "", daily: 4, stock: 5},
+            {name: "Can Liners LLDPE Clear 15x9x23", number: "35960INT2", daily: 4, stock: 3},
+            {name: "Coreless Interleaved Can Liners 38x58", number: "", daily: 4, stock: 5},
+            {name: "Can Liner 27x42", number: "621821int", daily: 4, stock: 4},
+            {name: "Wipe center pulls", number: "10059455", daily: 4, stock: 4},
+            {name: "Windshield Towels (blue)", number: "143404", daily: 2, stock: 2},
+            {name: "Solution tablets #15300 (Bleach)", number: "15300", daily: 1, stock: 5},
+            {name: "Office garbage bags", number: "35960int", daily: 4, stock: 4},
+            {name: "56 gal bags", number: "620000int", daily: 2, stock: 2},
+            {name: "Kraft paper (wrapping paper)", number: "172303", daily: 1, stock: 2},
             {name: "Driver release bags", number: "190103", daily: 5, stock: 5}
         ];
 
-        // (loadStock, saveStock, renderItems, updateStock, filterItems, export, copy, email functions remain the same as last version)
+        function loadStock() {
+            const saved = localStorage.getItem('upsInventory');
+            if (saved) inventory = JSON.parse(saved);
+        }
 
-        // === SAFETY SCAN CODE ===
+        function saveStock() {
+            localStorage.setItem('upsInventory', JSON.stringify(inventory));
+        }
+
+        function renderItems(filtered) {
+            const container = document.getElementById('itemsContainer');
+            container.innerHTML = '';
+            filtered.forEach((item, index) => {
+                const days = (item.stock / item.daily).toFixed(1);
+                const isUrgent = days < 7;
+                const card = document.createElement('div');
+                card.className = `item-card ${isUrgent ? 'urgent' : ''}`;
+                card.innerHTML = `
+                    ${item.image ? `<img src="${item.image}" alt="${item.name}">` : ''}
+                    <strong>${item.name}</strong><br>
+                    Item #: ${item.number}<br>
+                    <label>Stock: <input type="number" value="${item.stock}" onchange="updateStock(${index}, this.value)"></label><br>
+                    Daily: ${item.daily} | Days Left: ~${days}<br>
+                    ${item.grainger ? `<a href="${item.grainger}" target="_blank" style="color:#1976d2;">View on Grainger →</a><br>` : ''}
+                    <span style="color: ${isUrgent ? '#d32f2f' : '#2e7d32'}; font-weight:bold;">
+                        ${isUrgent ? 'URGENT — ORDER NOW' : 'OK'}
+                    </span>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function updateStock(index, newStock) {
+            inventory[index].stock = parseFloat(newStock) || 0;
+            saveStock();
+            renderItems(inventory);
+        }
+
+        function filterItems() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = inventory.filter(i => i.name.toLowerCase().includes(term));
+            renderItems(filtered.length ? filtered : inventory);
+        }
+
+        // Reorder functions (copy, email, export)
+        function getUrgentItems() {
+            return inventory.filter(item => (item.stock / item.daily) < 14);
+        }
+
+        function exportReorderList() {
+            const urgent = getUrgentItems();
+            let text = "UPS 4660 Reorder List\nDate: " + new Date().toLocaleDateString() + "\n\n";
+            urgent.forEach(item => {
+                const days = (item.stock / item.daily).toFixed(1);
+                text += `${item.name} | Item #: ${item.number} | Stock: ${item.stock} | Days Left: ~${days}\n\n`;
+            });
+            const blob = new Blob([text], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'UPS_4660_Reorder_List.txt';
+            a.click();
+        }
+
+        function copyReorderList() {
+            const urgent = getUrgentItems();
+            let text = "UPS 4660 Urgent Reorder List\nDate: " + new Date().toLocaleDateString() + "\n\n";
+            urgent.forEach(item => {
+                const days = (item.stock / item.daily).toFixed(1);
+                text += `${item.name}\nItem #: ${item.number}\nStock: ${item.stock} | Days Left: ~${days}\n\n`;
+            });
+            text += "Please order through official UPS accounts.";
+            navigator.clipboard.writeText(text).then(() => alert("✅ Copied! Paste into Outlook."));
+        }
+
+        function emailReorderList() {
+            copyReorderList();
+        }
+
+        // Safety Scan Functions
         let currentPhoto = null;
         let stream = null;
 
@@ -94,49 +188,45 @@
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 video.srcObject = stream;
-            } catch(e) { console.log("Camera error", e); }
+            } catch(e) { 
+                video.innerHTML = "Camera access failed. Make sure permissions are granted.";
+            }
         }
 
         function takePhoto() {
             const video = document.getElementById('camera');
             const canvas = document.getElementById('photoCanvas');
             const img = document.getElementById('capturedPhoto');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
             canvas.getContext('2d').drawImage(video, 0, 0);
             currentPhoto = canvas.toDataURL('image/jpeg', 0.85);
             img.src = currentPhoto;
             img.style.display = 'block';
-            video.style.display = 'none';
         }
 
         function askAdam() {
-            const desc = document.getElementById('issueDesc').value.toLowerCase();
+            const desc = (document.getElementById('issueDesc').value || "").toLowerCase();
             const responseDiv = document.getElementById('adamResponse');
-            let reply = "Adam here. Describe the issue clearly and I'll give you supplies needed + safety steps.";
+            let reply = "Adam here. Please describe the issue and I'll give supplies + safety steps.";
 
             if (desc.includes("spill") || desc.includes("hazard")) {
-                reply = "Hazardous Spill Protocol:\n1. Stop the spill if safe.\n2. Use Absorbent - Speedi Dry + gloves.\n3. Notify supervisor.\n4. Follow OSHA bloodborne pathogens if applicable.\nRecommended: Absorbent, Solution tablets, PPE.";
-            } else if (desc.includes("broken") || desc.includes("pallet")) {
-                reply = "Equipment Issue:\n- Tag out of service.\n- Use alternate pallet jack.\n- Report to maintenance.\nSupplies: Load Chart holders, Tape, Markers.";
+                reply = "Hazardous Spill: <br>1. Contain if safe.<br>2. Use Speedi Dry Absorbent + gloves/face shield.<br>3. Notify supervisor.<br>4. Clean with Solution tablets.";
+            } else if (desc.includes("broken") || desc.includes("jack") || desc.includes("pallet")) {
+                reply = "Equipment Issue: <br>Tag out of service.<br>Use alternate equipment.<br>Report to maintenance.<br>Supplies: Tape, Markers, Load Chart holders.";
             }
-            responseDiv.innerHTML = `<strong>Adam:</strong><br>${reply.replace(/\n/g, '<br>')}`;
+            responseDiv.innerHTML = `<strong>Adam:</strong><br>${reply}`;
         }
 
         function generateReport() {
             const desc = document.getElementById('issueDesc').value || "Issue reported";
-            let text = `URGENT - Center 4660 Issue Report\nDate: ${new Date().toLocaleString()}\n\nDescription: ${desc}\n\nRecommended Supplies from Inventory:\n`;
-            // add some relevant items
-            text += "• Absorbent - speedi dry\n• Solution tablets\n• PPE (gloves, face shields)\n\nPhoto attached.\n\nPlease advise. - Adam Valdez, Porter";
-            navigator.clipboard.writeText(text).then(() => {
-                alert("Report copied! Paste into message to manager + attach the photo from your camera roll.");
-            });
+            let text = `URGENT - Center 4660 Porter Report\nDate: ${new Date().toLocaleString()}\n\nDescription: ${desc}\n\nRecommended Supplies:\n• Absorbent - speedi dry\n• Solution tablets\n• PPE\n\nPhoto attached.\n\n- Adam Valdez, Porter`;
+            navigator.clipboard.writeText(text).then(() => alert("Report copied! Paste into message to manager + attach photo."));
         }
 
         // Initialize
         loadStock();
         renderItems(inventory);
-        // start on inventory tab
     </script>
 </body>
 </html>
